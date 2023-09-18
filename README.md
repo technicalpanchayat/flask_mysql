@@ -1,1 +1,3 @@
-# flask_mysql
+Flask + PyMySQL
+
+- Technical Panchayat

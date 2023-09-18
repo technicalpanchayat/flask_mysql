@@ -17,7 +17,6 @@ mysql = pymysql.connect(
 
 def create_table():
     try:
-        print('Creating Table Started =====')
         cur = mysql.cursor()
         cur.execute(
             '''
@@ -30,7 +29,6 @@ def create_table():
         )
         mysql.commit()
         cur.close()
-        print('Items Table Created =====')
     except Exception as e:
         print("Error while creating table",e)
 
@@ -39,6 +37,97 @@ def create_table():
 def hello():
     return 'Your Flask Server Running'
 
+@app.route('/additems', methods=['POST'])
+def add_items():
+    try:
+        data = request.get_json()
+        name = data['name']
+        description = data['description']
+        cur = mysql.cursor()
+        cur.execute('INSERT INTO items (name, description) VALUES (%s, %s)', (name, description))
+        mysql.commit()
+        cur.close()
+        response = {
+            'error' : False,
+            'message': 'Item Added Successfully',
+            'data': data         
+        }
+        return jsonify(response), 201
+    except Exception as e:
+        response = {
+            'error' : False,
+            'message': f'Error Ocurred: {e}',
+            'data': None         
+        }
+        return jsonify(response), 500
+
+@app.route('/getitems', methods = ['GET'])
+def get_items():
+    try:
+        cur = mysql.cursor()
+        cur.execute('SELECT * FROM items')
+        data = cur.fetchall()
+        cur.close()
+        items = [{ 'id': item[0], 'name': item[1], 'description': item[2]} for item in data]
+        response = {
+            'error' : False,
+            'message': 'Items Fetched Successfully',
+            'data': items         
+        }
+        return jsonify(response), 200
+    except Exception as e:
+        response = {
+            'error' : False,
+            'message': f'Error Ocurred: {e}',
+            'data': None         
+        }
+        return jsonify(response), 500
+    
+@app.route('/updateitems/<int:item_id>', methods=['PUT'])
+def update_item(item_id):
+    try:
+        data = request.get_json()
+        name = data['name']
+        description = data['description']
+        cur = mysql.cursor()
+        cur.execute('UPDATE items SET name = %s, description = %s WHERE id = %s', (name, description, item_id))
+        mysql.commit()
+        cur.close()
+        response = {
+            'error' : False,
+            'message': 'Items Updated Successfully',
+            'data': { 'item_id': item_id }
+        }
+        return jsonify(response), 201
+    except Exception as e:
+        response = {
+            'error' : False,
+            'message': f'Error Ocurred: {e}',
+            'data': None         
+        }
+        return jsonify(response), 500
+    
+@app.route('/deleteitems/<int:item_id>', methods=['DELETE'])
+def delete_items(item_id):
+    try:
+        cur = mysql.cursor()
+        cur.execute('DELETE FROM items WHERE id = %s',(item_id))
+        mysql.commit()
+        cur.close()
+        response = {
+            'error' : False,
+            'message': 'Item Deleted Successfully',
+            'data': { 'item_id': item_id }
+        }
+        return jsonify(response), 201
+    except Exception as e:
+        response = {
+            'error' : False,
+            'message': f'Error Ocurred: {e}',
+            'data': None         
+        }
+        return jsonify(response), 500
+    
 if __name__ == '__main__':
     create_table()
     app.run(debug=True)
